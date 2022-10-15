@@ -21,9 +21,9 @@ import (
 	"regexp"
 	"time"
 
-	internaldriver "github.com/google/pprof/internal/driver"
-	"github.com/google/pprof/internal/plugin"
-	"github.com/google/pprof/profile"
+	internaldriver "github.com/et-zone/ppcli/internal/driver"
+	"github.com/et-zone/ppcli/internal/plugin"
+	"github.com/et-zone/ppcli/profile"
 )
 
 // PProf acquires a profile, and symbolizes it using a profile
@@ -32,6 +32,27 @@ import (
 func PProf(o *Options) error {
 	return internaldriver.PProf(o.internalOptions())
 }
+func PPInit(o *Options)(*http.ServeMux,error){
+	router,err:=internaldriver.InitPProf(o.internalOptions())
+	if err!=nil{
+		return nil, err
+	}
+
+	//log.Println("please click link: "," http://localhost:9000/target")
+	//log.Println(http.ListenAndServe(":9000",router))
+	return router,err
+}
+
+func UpdateSource(source []string, se int)(string,error){
+	//time.Sleep(time.Second*5)
+	////src.Sources = []string{"http://localhost:8080/debug/pprof/profile?seconds=5"}
+	//internaldriver.UpdateSource([]string{"http://localhost:8080/debug/pprof/profile?seconds=3"},3)
+	////internaldriver.UpdateSource([]string{"http://localhost:8080/debug/pprof/trace?seconds=3"},3)
+	//fmt.Println("succ .....")
+	//
+	return internaldriver.UpdateSource(source,se)
+}
+
 
 func (o *Options) internalOptions() *plugin.Options {
 	var obj plugin.ObjTool

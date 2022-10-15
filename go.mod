@@ -1,4 +1,4 @@
-module github.com/google/pprof
+module github.com/et-zone/ppcli
 
 go 1.18
 

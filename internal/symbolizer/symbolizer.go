@@ -25,10 +25,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/pprof/internal/binutils"
-	"github.com/google/pprof/internal/plugin"
-	"github.com/google/pprof/internal/symbolz"
-	"github.com/google/pprof/profile"
+	"github.com/et-zone/ppcli/internal/binutils"
+	"github.com/et-zone/ppcli/internal/plugin"
+	"github.com/et-zone/ppcli/internal/symbolz"
+	"github.com/et-zone/ppcli/profile"
 	"github.com/ianlancetaylor/demangle"
 )
 

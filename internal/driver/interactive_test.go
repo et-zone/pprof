@@ -20,11 +20,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/pprof/internal/plugin"
-	"github.com/google/pprof/internal/proftest"
-	"github.com/google/pprof/internal/report"
-	"github.com/google/pprof/internal/transport"
-	"github.com/google/pprof/profile"
+	"github.com/et-zone/ppcli/internal/plugin"
+	"github.com/et-zone/ppcli/internal/proftest"
+	"github.com/et-zone/ppcli/internal/report"
+	"github.com/et-zone/ppcli/internal/transport"
+	"github.com/et-zone/ppcli/profile"
 )
 
 func TestShell(t *testing.T) {

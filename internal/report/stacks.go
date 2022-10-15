@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/google/pprof/internal/measurement"
-	"github.com/google/pprof/profile"
+	"github.com/et-zone/ppcli/internal/measurement"
+	"github.com/et-zone/ppcli/profile"
 )
 
 // StackSet holds a set of stacks corresponding to a profile.

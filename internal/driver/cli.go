@@ -20,8 +20,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/pprof/internal/binutils"
-	"github.com/google/pprof/internal/plugin"
+	"github.com/et-zone/ppcli/internal/binutils"
+	"github.com/et-zone/ppcli/internal/plugin"
 )
 
 type source struct {
@@ -83,16 +83,14 @@ func parseFlags(o *plugin.Options) (*source, []string, error) {
 		}
 	}
 
-	args := flag.Parse(func() {
-		o.UI.Print(usageMsgHdr +
-			usage(true) +
-			usageMsgSrc +
-			flag.ExtraUsage() +
-			usageMsgVars)
-	})
-	if len(args) == 0 {
-		return nil, nil, errors.New("no profile source specified")
-	}
+	//args := flag.Parse(func() {
+	//	o.UI.Print(usageMsgHdr +
+	//		usage(true) +
+	//		usageMsgSrc +
+	//		flag.ExtraUsage() +
+	//		usageMsgVars)
+	//})
+	args:=[]string{}
 
 	var execName string
 	// Recognize first argument as an executable or buildid override.

@@ -3,8 +3,8 @@ package driver
 import (
 	"strings"
 
-	"github.com/google/pprof/internal/measurement"
-	"github.com/google/pprof/profile"
+	"github.com/et-zone/ppcli/internal/measurement"
+	"github.com/et-zone/ppcli/profile"
 )
 
 // addLabelNodes adds pseudo stack frames "label:value" to each Sample with

@@ -18,19 +18,75 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/chzyer/readline"
-	"github.com/google/pprof/driver"
+	"github.com/et-zone/ppcli/driver"
+)
+
+const (
+	ip        = "127.0.0.1"
+	port      = "9000"
+	profile   = "/debug/pprof/profile" //cpu的占用信息
+	goroutine = "/debug/pprof/goroutine"
+	heap      = "/debug/pprof/heap"
+	mutex     = "/debug/pprof/mutex"  //持有锁的堆栈信息
+	allocs    = "/debug/pprof/allocs" //内存分配采样
+
+	trace = "/debug/pprof/trace" //当前程序执行的trace
+	//symbol="/debug/pprof/symbol"//请求中列出的程序计数器,无需刷新数据源
+	block        = "/debug/pprof/block"
+	threadcreate = "/debug/pprof/threadcreate" //导致操作系统创建新增的线程的堆栈信息
+
 )
 
 func main() {
-	if err := driver.PProf(&driver.Options{UI: newUI()}); err != nil {
-		fmt.Fprintf(os.Stderr, "pprof: %v\n", err)
-		os.Exit(2)
+	router, err := driver.PPInit(&driver.Options{UI: newUI()})
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
+
+	router.HandleFunc("/target/fresh", func(writer http.ResponseWriter, request *http.Request) {
+		request.ParseForm()
+
+		a := request.Form.Get("arg")
+		u, err := url.Parse(a)
+		if err != nil {
+			http.Error(writer, "args err... arg="+a,
+				http.StatusOK)
+			return
+		}
+		v := u.Query().Get("seconds")
+		if v == "" {
+			a = a + "?seconds=1"
+			driver.UpdateSource([]string{a}, 1)
+			return
+		} else {
+			in, err := strconv.Atoi(v)
+			if err != nil {
+				http.Error(writer, "?seconds err... "+a, http.StatusOK)
+				return
+			}
+			msg,err:=driver.UpdateSource([]string{a}, in)
+			if err != nil {
+				fmt.Println(err.Error())
+				http.Error(writer, "exec err... "+err.Error(), http.StatusOK)
+				return
+			}
+			http.Error(writer,msg, http.StatusOK)
+			return
+		}
+
+	})
+	log.Println("please click link: ", " http://"+ip+":"+port+"/target")
+	log.Println(http.ListenAndServe(":"+port, router))
 }
 
 // readlineUI implements the driver.UI interface using the

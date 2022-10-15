@@ -24,7 +24,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/google/pprof/internal/plugin"
+	"github.com/et-zone/ppcli/internal/plugin"
 )
 
 type transport struct {

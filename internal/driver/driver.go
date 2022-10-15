@@ -19,16 +19,22 @@ package driver
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"github.com/et-zone/ppcli/internal/plugin"
+	"github.com/et-zone/ppcli/internal/report"
+	"github.com/et-zone/ppcli/profile"
+	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/google/pprof/internal/plugin"
-	"github.com/google/pprof/internal/report"
-	"github.com/google/pprof/profile"
+	"time"
 )
+
+var src *source
+var o *plugin.Options
 
 // PProf acquires a profile, and symbolizes it using a profile
 // manager. Then it generates a report formatted according to the
@@ -37,26 +43,96 @@ func PProf(eo *plugin.Options) error {
 	// Remove any temporary files created during pprof processing.
 	defer cleanupTempFiles()
 
-	o := setDefaults(eo)
-
-	src, cmd, err := parseFlags(o)
+	o = setDefaults(eo)
+	var err error
+	src, _, err = parseFlags(o)
 	if err != nil {
 		return err
 	}
 
-	p, err := fetchProfiles(src, o)
+	//p, err := fetchProfiles(src, o)
+	//if err != nil {
+	//	return err
+	//}
+	//go Run()
+	router, err := iniserveWebUI()
 	if err != nil {
 		return err
 	}
+	log.Println("please click link: ", " http://localhost:9000/target")
+	log.Println(http.ListenAndServe(":9000", router))
+	return nil
+}
 
-	if cmd != nil {
-		return generateReport(p, cmd, currentConfig(), o)
-	}
+func InitPProf(eo *plugin.Options) (*http.ServeMux, error) {
+	// Remove any temporary files created during pprof processing.
+	defer cleanupTempFiles()
 
-	if src.HTTPHostport != "" {
-		return serveWebInterface(src.HTTPHostport, p, o, src.HTTPDisableBrowser)
+	o = setDefaults(eo)
+	var err error
+	src, _, err = parseFlags(o)
+	if err != nil {
+		return nil, err
 	}
-	return interactive(p, o)
+	//go func() {
+	//	time.Sleep(time.Second*2)
+	//	p, err := fetchProfiles(src, o)
+	//	if err != nil {
+	//		fmt.Println(err.Error())
+	//	}
+	//
+	//	UpdateSource([]string{" http://localhost:8080/debug/pprof/profile?seconds=2"},2)
+	//}()
+
+	//go Run()
+	router, err := iniserveWebUI()
+	if err != nil {
+		return nil, err
+	}
+	//log.Println("please click link: "," http://localhost:8080/target")
+	//log.Println(http.ListenAndServe(":8080",router))
+	return router, nil
+}
+
+func UpdateSource(source []string,se int) (string,error) {
+
+	//s:=src
+	//fmt.Println(s)
+	if src != nil {
+		src.Sources = source
+		//src.Sources = []string{"http://localhost:8080/debug/pprof/profile?seconds=5"}
+		src.Seconds = se
+		t := time.Now()
+		p, err := fetchProfiles(src, o)
+		if err != nil {
+			return fmt.Sprintf("succ , time = %v ",time.Since(t)),err
+		}
+		SetUI(p, o)
+		return fmt.Sprintf("succ , time = %v ",time.Since(t)),nil
+	}
+	return "",errors.New("fail , src not init")
+
+}
+
+func Run() {
+	time.Sleep(time.Second)
+	for {
+		time.Sleep(time.Second * 2)
+		//s:=src
+		//fmt.Println(s)
+		if src != nil {
+			src.Sources = []string{"http://localhost:8080/debug/pprof/profile?seconds=5"}
+			src.Seconds = 5
+			t := time.Now()
+			p, err := fetchProfiles(src, o)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			fmt.Println(time.Since(t))
+			SetUI(p, o)
+		}
+		fmt.Println("succ update")
+	}
 }
 
 func generateRawReport(p *profile.Profile, cmd []string, cfg config, o *plugin.Options) (*command, *report.Report, error) {

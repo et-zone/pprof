@@ -27,10 +27,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/pprof/internal/graph"
-	"github.com/google/pprof/internal/plugin"
-	"github.com/google/pprof/internal/report"
-	"github.com/google/pprof/profile"
+	"github.com/et-zone/ppcli/internal/graph"
+	"github.com/et-zone/ppcli/internal/plugin"
+	"github.com/et-zone/ppcli/internal/report"
+	"github.com/et-zone/ppcli/profile"
 )
 
 // webInterface holds the state needed for serving a browser based interface.
@@ -90,16 +90,28 @@ type webArgs struct {
 	Configs     []configMenuEntry
 }
 
+var ui *webInterface
+
+func SetUI(p *profile.Profile, o *plugin.Options) {
+	if ui != nil {
+		//ui.prof
+		ui.prof = p
+		ui.options = o
+	}
+}
 func serveWebInterface(hostport string, p *profile.Profile, o *plugin.Options, disableBrowser bool) error {
 	host, port, err := getHostAndPort(hostport)
 	if err != nil {
 		return err
 	}
 	interactiveMode = true
-	ui, err := makeWebInterface(p, o)
-	if err != nil {
-		return err
+	if ui == nil {
+		ui, err = makeWebInterface(p, o)
+		if err != nil {
+			return err
+		}
 	}
+
 	for n, c := range pprofCommands {
 		ui.help[n] = c.description
 	}
@@ -131,11 +143,6 @@ func serveWebInterface(hostport string, p *profile.Profile, o *plugin.Options, d
 			"/flamegraph2":  http.HandlerFunc(ui.stackView), // Experimental
 			"/saveconfig":   http.HandlerFunc(ui.saveConfig),
 			"/deleteconfig": http.HandlerFunc(ui.deleteConfig),
-			"/download": http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				w.Header().Set("Content-Type", "application/vnd.google.protobuf+gzip")
-				w.Header().Set("Content-Disposition", "attachment;filename=profile.pb.gz")
-				p.Write(w)
-			}),
 		},
 	}
 
@@ -147,6 +154,52 @@ func serveWebInterface(hostport string, p *profile.Profile, o *plugin.Options, d
 		go openBrowser(url, o)
 	}
 	return server(args)
+}
+
+func iniserveWebUI() (*http.ServeMux,error) {
+	var err error
+	interactiveMode = true
+	if ui == nil {
+		ui, err = makeWebInterface(nil, nil)
+		if err != nil {
+			return nil,err
+		}
+	}
+
+	for n, c := range pprofCommands {
+		ui.help[n] = c.description
+	}
+	for n, help := range configHelp {
+		ui.help[n] = help
+	}
+	ui.help["details"] = "Show information about the profile and this view"
+	ui.help["graph"] = "Display profile as a directed graph"
+	ui.help["flamegraph"] = "Display profile as a flame graph"
+	ui.help["flamegraph2"] = "Display profile as a flame graph (experimental version that can display caller info on selection)"
+	ui.help["reset"] = "Show the entire profile"
+	ui.help["save_config"] = "Save current settings"
+
+	var mux = http.NewServeMux()
+	handlers := map[string]http.Handler{
+		"/":             http.HandlerFunc(ui.dot),
+		"/top":          http.HandlerFunc(ui.top),
+		"/disasm":       http.HandlerFunc(ui.disasm),
+		"/source":       http.HandlerFunc(ui.source),
+		"/peek":         http.HandlerFunc(ui.peek),
+		"/flamegraph":   http.HandlerFunc(ui.flamegraph),
+		"/flamegraph2":  http.HandlerFunc(ui.stackView), // Experimental
+		"/saveconfig":   http.HandlerFunc(ui.saveConfig),
+		"/deleteconfig": http.HandlerFunc(ui.deleteConfig),
+	}
+	for k, v := range handlers {
+		mux.HandleFunc("/target"+k, wrapH(v))
+	}
+	return mux,err
+}
+func wrapH(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(w, r)
+	}
 }
 
 func getHostAndPort(hostport string) (string, int, error) {
@@ -202,7 +255,7 @@ func defaultWebServer(args *plugin.HTTPServerArgs) error {
 	// We serve the ui at /ui/ and redirect there from the root. This is done
 	// to surface any problems with serving the ui at a non-root early. See:
 	//
-	// https://github.com/google/pprof/pull/348
+	// https://github.com/et-zone/ppcli/pull/348
 	mux := http.NewServeMux()
 	mux.Handle("/ui/", http.StripPrefix("/ui", handler))
 	mux.Handle("/", redirectWithQuery("/ui"))
@@ -300,6 +353,11 @@ func (ui *webInterface) render(w http.ResponseWriter, req *http.Request, tmpl st
 
 // dot generates a web page containing an svg diagram.
 func (ui *webInterface) dot(w http.ResponseWriter, req *http.Request) {
+	if ui.prof==nil{
+		http.Error(w, "not get info ,please wait...",
+			http.StatusNotImplemented)
+		return
+	}
 	rpt, errList := ui.makeReport(w, req, []string{"svg"}, nil)
 	if rpt == nil {
 		return // error already reported

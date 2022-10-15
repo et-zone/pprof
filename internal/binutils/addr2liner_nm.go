@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/pprof/internal/plugin"
+	"github.com/et-zone/ppcli/internal/plugin"
 )
 
 const (
