@@ -63,6 +63,11 @@ func main() {
 				http.StatusOK)
 			return
 		}
+		if a==""{
+			http.Error(writer, "args can not nil,like: ?arg=http://localhost:8080/debug/pprof/profile?seconds=1",
+				http.StatusOK)
+			return
+		}
 		v := u.Query().Get("seconds")
 		if v == "" {
 			a = a + "?seconds=1"
@@ -85,7 +90,8 @@ func main() {
 		}
 
 	})
-	log.Println("please click link: ", " http://"+ip+":"+port+"/target")
+	log.Println("please click link to browse Info: ", " http://"+ip+":"+port+"/target")
+	log.Println("please click link to get source: ", " http://"+ip+":"+port+"/target/fresh")
 	log.Println(http.ListenAndServe(":"+port, router))
 }
 
