@@ -21,7 +21,7 @@ const (
 
 	JobHeap = "/debug/pprof/heap?seconds="
 
-	JobGoroutine = "/debug/pprof/goroutine?seconds="
+	JobGoroutine = "/debug/pprof/goroutine?seconds=" //peek
 
 	JobMutex = "/debug/pprof/mutex?seconds="
 
